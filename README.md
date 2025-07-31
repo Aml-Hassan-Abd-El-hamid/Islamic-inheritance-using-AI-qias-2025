@@ -1,0 +1,1 @@
+# Islamic-inheritance-using-AI-qias-2025
