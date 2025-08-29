@@ -36,7 +36,6 @@ The best configuration achieved a **39.7% relative improvement** over the base m
 1. **Clone the repository**:
 ```bash
 git clone "https://github.com/Aml-Hassan-Abd-El-hamid/Islamic-inheritance-using-AI-qias-2025.git"
-cd RAG
 ```
 
 2. **Run setup script**:
