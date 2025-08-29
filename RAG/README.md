@@ -6,6 +6,8 @@ A Retrieval-Augmented Generation (RAG) system for answering multiple-choice ques
 
 This project implements a comprehensive RAG system that combines dense vector embeddings with language model generation to answer complex questions about Islamic inheritance law. The system achieved **44.0% overall accuracy** on multiple-choice questions, representing a **12.5 percentage point improvement** over the base generation model alone.
 
+The orginal work was done via a kaggle notebook that can be found here: https://www.kaggle.com/code/amlhassan/rag-using-qwen
+
 ## Key Features
 
 - **Arabic Text Processing**: Specialized normalization and tokenization for Arabic text
