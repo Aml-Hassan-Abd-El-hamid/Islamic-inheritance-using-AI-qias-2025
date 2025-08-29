@@ -1,52 +1,116 @@
+import requests
+import subprocess
+import time
 import re
-from typing import List, Dict
-from enhanced_context import EnhancedContext
-from ollama_utils import generate_with_ollama
 
-class RAGSystem(EnhancedContext):
-    """RAG System with MCQ answering capability"""
+def check_ollama_running():
+    """Check if Ollama service is running"""
+    try:
+        response = requests.get("http://localhost:11434/api/tags", timeout=5)
+        return response.status_code == 200
+    except:
+        return False
+
+def wait_for_ollama(max_wait=30):
+    """Wait for Ollama service to start"""
+    print("Waiting for Ollama service to start...")
+    for i in range(max_wait):
+        if check_ollama_running():
+            print("Ollama service is running!")
+            return True
+        time.sleep(1)
+        if i % 5 == 0:
+            print(f"Still waiting... ({i+1}/{max_wait})")
+    return False
+
+def setup_ollama():
+    """Setup Ollama and pull Qwen2.5:7B model"""
+    print("Setting up Ollama...")
     
-    def answer_mcq_with_generation(self, question: str, options: List[str], similarity_threshold: float = 0.8, top_k: int = 1) -> Dict:
-        """Answer MCQ using RAG + Generation with Ollama"""
-        # Get relevant documents
-        results = self.search(question, top_k=top_k, similarity_threshold=similarity_threshold)
-        
-        # Build context from retrieved documents
-        context = "\n\n".join([
-            f"مرجع {i+1}: {r['document']['Answer']}"
-            for i, r in enumerate(results)
-        ])
-        
-        # Create prompt
-        options_text = "\n".join([f"{i+1}. {opt}" for i, opt in enumerate(options)])
-        
-        prompt = f"""اعتماداً على المراجع الشرعية التالية المتعلقة بالميراث الإسلامي، أجب عن السؤال التالي باختيار الرقم الصحيح فقط للإجابة الصحيحة:
+    # Check if Ollama is already installed
+    try:
+        result = subprocess.run(["ollama", "--version"], capture_output=True, text=True)
+        print(f"Ollama already installed: {result.stdout.strip()}")
+    except FileNotFoundError:
+        print("Installing Ollama...")
+        try:
+            subprocess.run("curl -fsSL https://ollama.com/install.sh | sh", shell=True, check=True)
+            print("Ollama installed successfully")
+        except subprocess.CalledProcessError:
+            print("Failed to install Ollama")
+            return False
+    
+    # Check if service is already running
+    if check_ollama_running():
+        print("Ollama service is already running!")
+    else:
+        # Start Ollama service in background
+        try:
+            print("Starting Ollama service...")
+            subprocess.Popen(["ollama", "serve"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            
+            # Wait for service to start
+            if not wait_for_ollama():
+                print("Failed to start Ollama service within timeout")
+                return False
                 
+        except Exception as e:
+            print(f"Failed to start Ollama service: {e}")
+            return False
+    
+    # Check if model is already available
+    try:
+        result = subprocess.run(["ollama", "list"], capture_output=True, text=True)
+        if "qwen2.5:7b" in result.stdout:
+            print("Qwen2.5:7B model already available!")
+            return True
+    except:
+        pass
+    
+    # Pull the model
+    try:
+        print("Pulling Qwen2.5:7B model (this may take several minutes)...")
+        subprocess.run(["ollama", "pull", "qwen2.5:7b"], check=True)
+        print("Qwen2.5:7B model downloaded successfully!")
+        return True
+    except subprocess.CalledProcessError:
+        print("Failed to pull Qwen2.5:7B model")
+        # Try smaller model as fallback
+        try:
+            print("Trying smaller model qwen2.5:1.5b as fallback...")
+            subprocess.run(["ollama", "pull", "qwen2.5:1.5b"], check=True)
+            print("Fallback model downloaded successfully!")
+            return True
+        except:
+            print("Failed to pull any Qwen model")
+            return False
 
-                السؤال: {question}
-
-                الخيارات:
-                {options_text}
-
-                اختر الإجابة الصحيحة ورقمها فقط (1، 2، 3، إلخ):
-                {context}
-                """
-
-        # Generate answer
-        response = generate_with_ollama(prompt)
-        
-        # Extract number from response (simple parsing)
-        numbers = re.findall(r'\b([1-6])\b', response)
-        predicted_num = int(numbers[0]) if numbers else 1
-        
-        # Validate prediction is within range
-        if predicted_num > len(options):
-            predicted_num = 1
-        
-        return {
-            'predicted_answer': f'option{predicted_num}',
-            'raw_response': response,
-            'retrieved_sources': [r['document']['ID'] for r in results],
-            'context_used': len(results),
-            'fallback_used': False
+def generate_with_ollama(prompt: str, model: str = "qwen2.5:7b") -> str:
+    """Generate text using Ollama"""
+    url = "http://localhost:11434/api/generate"
+    
+    data = {
+        "model": model,
+        "prompt": prompt,
+        "stream": False,
+        "options": {
+            "temperature": 0.1,  # Lower temperature for more consistent answers
+            "top_p": 0.9
         }
+    }
+    
+    try:
+        response = requests.post(url, json=data, timeout=60)  # Increased timeout
+        if response.status_code == 200:
+            return response.json()["response"]
+        else:
+            # Try fallback model if main model fails
+            if model == "qwen2.5:7b":
+                print("Trying fallback model...")
+                data["model"] = "qwen2.5:1.5b"
+                response = requests.post(url, json=data, timeout=60)
+                if response.status_code == 200:
+                    return response.json()["response"]
+            return f"Error: HTTP {response.status_code}"
+    except requests.exceptions.RequestException as e:
+        return f"Request failed: {str(e)}"
