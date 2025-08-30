@@ -1,0 +1,12 @@
+torch>=2.1.0
+transformers>=4.40.0
+unsloth>=0.3.10
+datasets>=2.14.0
+sentencepiece
+protobuf
+accelerate
+peft
+trl
+xformers==0.0.29.post3
+bitsandbytes
+hf_transfer
