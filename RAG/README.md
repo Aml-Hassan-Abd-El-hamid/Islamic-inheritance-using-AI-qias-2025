@@ -126,21 +126,6 @@ python main.py
 - Stopword filtering
 - Keyword extraction
 
-## Requirements
-
-- Python 3.8+
-- CUDA-compatible GPU (optional, for faster embeddings)
-- 8GB+ RAM
-- Internet connection (for model downloads)
-
-### Key Dependencies
-
-- `sentence-transformers`: For embedding generation
-- `faiss-cpu/faiss-gpu`: For efficient similarity search
-- `pandas`: Data manipulation
-- `requests`: Ollama API communication
-- `scikit-learn`: Cosine similarity computation
-
 ## Data Format
 
 ### JSON Q&A Format
