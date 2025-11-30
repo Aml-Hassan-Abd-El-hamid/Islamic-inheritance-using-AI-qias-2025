@@ -1,12 +1,14 @@
 # Islamic-inheritance-using-AI-qias-2025
 
-This repo contains the code for all the pipelines mentioned in the paper named **Gumball at QIAS 2025: Arabic LLM Automated Reasoning in Islamic
-Inheritance**
+This repo contains the code for all the pipelines mentioned in the paper named [**Gumball at QIAS 2025: Arabic LLM Automated Reasoning in Islamic
+Inheritance**](https://aclanthology.org/2025.arabicnlp-sharedtasks.132.pdf)
 
 In the paper we tried and compared different approches untill we got the best one, each approaches code will be provided in this repo in a different folder with its own dependencies since each one was built and evaluated separately.
 
 ## Repo  Structure
 ```
+├── GRPO Fine-Tuning
+  ├── ....
 ├── RAG
   ├── ... 
 ├── Two-Stage-Fine-Tuning-of-SLM
